@@ -35,20 +35,8 @@ SysMemFrameAllocator::~SysMemFrameAllocator()
     Close();
 }
 
-mfxStatus SysMemFrameAllocator::Init(mfxAllocatorParams *pParams)
+mfxStatus SysMemFrameAllocator::Init()
 {
-    // check if any params passed from application
-    if (pParams)
-    {
-        SysMemAllocatorParams *pSysMemParams = 0;
-        pSysMemParams = dynamic_cast<SysMemAllocatorParams *>(pParams);
-        if (!pSysMemParams)
-            return MFX_ERR_NOT_INITIALIZED;
-
-        m_pBufferAllocator = pSysMemParams->pBufferAllocator;
-        m_bOwnBufferAllocator = false;
-    }
-
     // if buffer allocator wasn't passed from application create own
     if (!m_pBufferAllocator)
     {

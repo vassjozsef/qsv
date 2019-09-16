@@ -11,84 +11,6 @@
 #include "base_allocator.h"
 #include "utils.h"
 
-struct bufSet
-{
-	mfxU16 m_nFields;
-	std::vector<mfxExtBuffer *> buffers;
-
-	bufSet(mfxU16 n_fields = 1)
-		: m_nFields(n_fields)
-	{}
-
-	~bufSet() { Destroy(); }
-
-	void Destroy()
-	{
-		for (mfxU16 i = 0; i < buffers.size(); /*i++*/)
-		{
-			switch (buffers[i]->BufferId)
-			{
-#if (MFX_VERSION >= 1027)
-			case MFX_EXTBUFF_AVC_ROUNDING_OFFSET:
-			{
-				mfxExtAVCRoundingOffset* roundingOffset = reinterpret_cast<mfxExtAVCRoundingOffset*>(buffers[i]);
-				MSDK_SAFE_DELETE_ARRAY(roundingOffset);
-				i += m_nFields;
-			}
-			break;
-#endif
-			default:
-				++i;
-				break;
-			}
-		}
-
-		buffers.clear();
-	}
-};
-
-struct bufList
-{
-	std::vector<bufSet*> buf_list;
-	mfxU16 m_nBufListStart;
-
-	bufList()
-		: m_nBufListStart(0)
-	{}
-
-	~bufList() { Clear(); }
-
-	void AddSet(bufSet* set) { buf_list.push_back(set); }
-
-	bool Empty() { return buf_list.empty(); }
-
-	void Clear()
-	{
-		for (std::vector<bufSet*>::iterator it = buf_list.begin(); it != buf_list.end(); ++it)
-		{
-			MSDK_SAFE_DELETE(*it);
-		}
-
-		buf_list.clear();
-	}
-
-	bufSet* GetFreeSet()
-	{
-		bufSet *pBufSet = NULL;
-		if (m_nBufListStart < buf_list.size())
-		{
-			pBufSet = buf_list[m_nBufListStart];
-
-			m_nBufListStart += 1;
-			m_nBufListStart = m_nBufListStart % (buf_list.size());
-
-			return pBufSet;
-		}
-
-		return NULL;
-	}
-};
-
 struct sTask
 {
 	mfxBitstream mfxBS;
@@ -113,14 +35,11 @@ public:
 	virtual mfxStatus SynchronizeFirstTask();
 
 	virtual void Close();
-	virtual void SetGpuHangRecoveryFlag();
 	virtual void ClearTasks();
 protected:
 	sTask* m_pTasks;
 	mfxU32 m_nPoolSize;
 	mfxU32 m_nTaskBufferStart;
-
-	bool m_bGpuHangRecovery;
 
 	MFXVideoSession* m_pmfxSession;
 
@@ -181,7 +100,6 @@ private:
 	mfxVideoParam m_mfxEncParams;
 
 	MFXFrameAllocator* m_pMFXAllocator;
-	mfxAllocatorParams* m_pmfxAllocatorParams;
 
 	mfxFrameSurface1* m_pEncSurfaces; // frames array for encoder input (vpp output)
 	mfxFrameAllocResponse m_EncResponse;  // memory allocation response for encoder

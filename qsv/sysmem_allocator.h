@@ -36,20 +36,13 @@ struct sFrame
     mfxFrameInfo    info;
 };
 
-struct SysMemAllocatorParams : mfxAllocatorParams
-{
-    SysMemAllocatorParams()
-        : mfxAllocatorParams(), pBufferAllocator(NULL) { }
-    MFXBufferAllocator *pBufferAllocator;
-};
-
 class SysMemFrameAllocator: public BaseFrameAllocator
 {
 public:
     SysMemFrameAllocator();
     virtual ~SysMemFrameAllocator();
 
-    virtual mfxStatus Init(mfxAllocatorParams *pParams);
+    virtual mfxStatus Init();
     virtual mfxStatus Close();
     virtual mfxStatus LockFrame(mfxMemId mid, mfxFrameData *ptr);
     virtual mfxStatus UnlockFrame(mfxMemId mid, mfxFrameData *ptr);

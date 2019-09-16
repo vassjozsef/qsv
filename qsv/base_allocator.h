@@ -28,11 +28,6 @@ or https://software.intel.com/en-us/media-client-solutions-support.
 
 class MSDKMutex;
 
-struct mfxAllocatorParams
-{
-    virtual ~mfxAllocatorParams(){};
-};
-
 // this class implements methods declared in mfxFrameAllocator structure
 // simply redirecting them to virtual methods which should be overridden in derived classes
 class MFXFrameAllocator : public mfxFrameAllocator
@@ -42,7 +37,7 @@ public:
     virtual ~MFXFrameAllocator();
 
      // optional method, override if need to pass some parameters to allocator from application
-    virtual mfxStatus Init(mfxAllocatorParams *pParams) = 0;
+    virtual mfxStatus Init() = 0;
     virtual mfxStatus Close() = 0;
 
     virtual mfxStatus AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response) = 0;
@@ -75,7 +70,7 @@ public:
     BaseFrameAllocator();
     virtual ~BaseFrameAllocator();
 
-    virtual mfxStatus Init(mfxAllocatorParams *pParams) = 0;
+    virtual mfxStatus Init() = 0;
     virtual mfxStatus Close();
     virtual mfxStatus AllocFrames(mfxFrameAllocRequest *request, mfxFrameAllocResponse *response);
     virtual mfxStatus FreeFrames(mfxFrameAllocResponse *response);

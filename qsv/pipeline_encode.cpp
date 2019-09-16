@@ -12,7 +12,6 @@ CEncTaskPool::CEncTaskPool()
 	m_pmfxSession = NULL;
 	m_nTaskBufferStart = 0;
 	m_nPoolSize = 0;
-	m_bGpuHangRecovery = false;
 }
 
 CEncTaskPool::~CEncTaskPool()
@@ -58,20 +57,6 @@ mfxStatus CEncTaskPool::SynchronizeFirstTask()
 	if (NULL != m_pTasks[m_nTaskBufferStart].EncSyncP)
 	{
 		sts = m_pmfxSession->SyncOperation(m_pTasks[m_nTaskBufferStart].EncSyncP, MSDK_WAIT_INTERVAL);
-		if (sts == MFX_ERR_GPU_HANG && m_bGpuHangRecovery)
-		{
-			bGpuHang = true;
-			{
-				for (mfxU32 i = 0; i < m_nPoolSize; i++)
-					if (m_pTasks[i].EncSyncP != NULL)
-					{
-						sts = m_pmfxSession->SyncOperation(m_pTasks[i].EncSyncP, 0);//MSDK_WAIT_INTERVAL
-					}
-			}
-			ClearTasks();
-			sts = MFX_ERR_NONE;
-			std::cout << "GPU hang happened" << std::endl;
-		}
 		MSDK_CHECK_STATUS_NO_RET(sts, "SyncOperation failed");
 
 		if (MFX_ERR_NONE == sts)
@@ -157,11 +142,6 @@ void CEncTaskPool::Close()
 	m_nPoolSize = 0;
 }
 
-void CEncTaskPool::SetGpuHangRecoveryFlag()
-{
-	m_bGpuHangRecovery = true;
-}
-
 void CEncTaskPool::ClearTasks()
 {
 	for (size_t i = 0; i < m_nPoolSize; i++)
@@ -225,7 +205,6 @@ CEncodingPipeline::CEncodingPipeline()
 {
 	m_pmfxENC = NULL;
 	m_pMFXAllocator = NULL;
-	m_pmfxAllocatorParams = NULL;
 	m_pEncSurfaces = NULL;
 	m_InputFourCC = 0;
 
@@ -351,7 +330,7 @@ mfxStatus CEncodingPipeline::CreateAllocator()
 	MSDK_CHECK_POINTER(m_pMFXAllocator, MFX_ERR_MEMORY_ALLOC);
 
 	// initialize memory allocator
-	sts = m_pMFXAllocator->Init(m_pmfxAllocatorParams);
+	sts = m_pMFXAllocator->Init();
 	MSDK_CHECK_STATUS(sts, "m_pMFXAllocator->Init failed");
 
 	return MFX_ERR_NONE;
@@ -361,7 +340,6 @@ void CEncodingPipeline::DeleteAllocator()
 {
 	// delete allocator
 	MSDK_SAFE_DELETE(m_pMFXAllocator);
-	MSDK_SAFE_DELETE(m_pmfxAllocatorParams);
 }
 
 mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
