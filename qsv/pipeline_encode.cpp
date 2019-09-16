@@ -230,16 +230,16 @@ CEncodingPipeline::CEncodingPipeline()
 	m_InputFourCC = 0;
 
 	m_nFramesRead = 0;
-	m_bFileWriterReset = false;
+
+	m_FileWriter = nullptr;
 
 	MSDK_ZERO_MEMORY(m_mfxEncParams);
 
 	MSDK_ZERO_MEMORY(m_EncResponse);
 
-	m_bCutOutput = false;
-	m_bInsertIDR = false;
-
 	MSDK_ZERO_MEMORY(m_encCtrl);
+
+	m_bInsertIDR = false;
 }
 
 CEncodingPipeline::~CEncodingPipeline()
@@ -362,8 +362,6 @@ void CEncodingPipeline::DeleteAllocator()
 	// delete allocator
 	MSDK_SAFE_DELETE(m_pMFXAllocator);
 	MSDK_SAFE_DELETE(m_pmfxAllocatorParams);
-
-//	DeleteHWDevice();
 }
 
 mfxStatus CEncodingPipeline::InitMfxEncParams(sInputParams *pInParams)
@@ -717,16 +715,6 @@ mfxStatus CEncodingPipeline::Run()
 mfxStatus CEncodingPipeline::GetFreeTask(sTask **ppTask)
 {
 	mfxStatus sts = MFX_ERR_NONE;
-
-	if (m_bFileWriterReset)
-	{
-		if (m_FileWriter)
-		{
-			sts = m_FileWriter->Reset();
-			MSDK_CHECK_STATUS(sts, "m_FileWriters.first->Reset failed");
-		}
-		m_bFileWriterReset = false;
-	}
 
 	sts = m_TaskPool.GetFreeTask(ppTask);
 	if (MFX_ERR_NOT_FOUND == sts)

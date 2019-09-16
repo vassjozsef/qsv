@@ -188,9 +188,7 @@ private:
 
 	mfxU32 m_InputFourCC;
 	
-	bool   m_bFileWriterReset;
 	mfxU32 m_nFramesRead;
-	bool   m_bCutOutput;
 	bool   m_bInsertIDR;
 
 	mfxEncodeCtrl m_encCtrl;
