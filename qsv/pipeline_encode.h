@@ -69,7 +69,6 @@ public:
 	mfxStatus ResetMFXComponents(sInputParams* pParams);
 
 private:
-	void InsertIDR(bool bIsNextFrameIDR);
 	mfxStatus InitEncFrameParams(sTask* pTask);
 
 	mfxStatus CreateAllocator();
@@ -107,7 +106,6 @@ private:
 	mfxU32 m_InputFourCC;
 	
 	mfxU32 m_nFramesRead;
-	bool   m_bInsertIDR;
 
 	mfxEncodeCtrl m_encCtrl;
 };

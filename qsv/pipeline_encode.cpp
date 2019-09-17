@@ -217,8 +217,6 @@ CEncodingPipeline::CEncodingPipeline()
 	MSDK_ZERO_MEMORY(m_EncResponse);
 
 	MSDK_ZERO_MEMORY(m_encCtrl);
-
-	m_bInsertIDR = false;
 }
 
 CEncodingPipeline::~CEncodingPipeline()
@@ -304,7 +302,7 @@ mfxStatus CEncodingPipeline::Init(sInputParams *pParams) {
 void CEncodingPipeline::Close()
 {
 	if (m_FileWriter) {
-		std::cout << "Frame number : %u" << m_FileWriter->m_nProcessedFramesNum << std::endl;
+		std::cout << "Frame number: " << m_FileWriter->m_nProcessedFramesNum << std::endl;
 	}
 
 	MSDK_SAFE_DELETE(m_pmfxENC);
@@ -442,14 +440,10 @@ mfxStatus CEncodingPipeline::AllocFrames()
 
 	mfxStatus sts = MFX_ERR_NONE;
 	mfxFrameAllocRequest EncRequest;
-	mfxFrameAllocRequest VppRequest[2];
 
 	mfxU16 nEncSurfNum = 0; // number of surfaces for encoder
-	mfxU16 nVppSurfNum = 0; // number of surfaces for vpp
 
 	MSDK_ZERO_MEMORY(EncRequest);
-	MSDK_ZERO_MEMORY(VppRequest[0]);
-	MSDK_ZERO_MEMORY(VppRequest[1]);
 
 	// Querying encoder
 	sts = GetFirstEncoder()->Query(&m_mfxEncParams, &m_mfxEncParams);
@@ -554,14 +548,13 @@ mfxStatus CEncodingPipeline::Run()
 
 		for (;;)
 		{
-			InsertIDR(m_bInsertIDR);
-
 			sts = InitEncFrameParams(pCurrentTask);
 			MSDK_CHECK_STATUS(sts, "ENCODE: InitEncFrameParams failed");
 
 			// at this point surface for encoder contains either a frame from file or a frame processed by vpp
 			sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, &m_pEncSurfaces[nEncSurfIdx], &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
-			m_bInsertIDR = false;
+
+//			std::cout << "Sync: " << pCurrentTask->EncSyncP << std::endl;
 
 			if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
 			{
@@ -603,9 +596,8 @@ mfxStatus CEncodingPipeline::Run()
 
 		for (;;)
 		{
-			InsertIDR(m_bInsertIDR);
+			std::cout << "Getting buffered frames" << std::endl;
 			sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, NULL, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
-			m_bInsertIDR = false;
 
 			if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
 			{
@@ -641,9 +633,7 @@ mfxStatus CEncodingPipeline::Run()
 
 		for (;;)
 		{
-			InsertIDR(m_bInsertIDR);
 			sts = m_pmfxENC->EncodeFrameAsync(&m_encCtrl, NULL, &pCurrentTask->mfxBS, &pCurrentTask->EncSyncP);
-			m_bInsertIDR = false;
 
 			if (MFX_ERR_NONE < sts && !pCurrentTask->EncSyncP) // repeat the call if warning and no output
 			{
@@ -718,18 +708,6 @@ mfxStatus CEncodingPipeline::LoadNextFrame(mfxFrameSurface1* pSurf)
 	m_nFramesRead++;
 
 	return sts;
-}
-
-void CEncodingPipeline::InsertIDR(bool bIsNextFrameIDR)
-{
-	if (bIsNextFrameIDR)
-	{
-		m_encCtrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
-	}
-	else
-	{
-		m_encCtrl.FrameType = MFX_FRAMETYPE_UNKNOWN;
-	}
 }
 
 mfxStatus CEncodingPipeline::InitEncFrameParams(sTask* pTask)
